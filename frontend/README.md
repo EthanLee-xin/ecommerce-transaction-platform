@@ -1,70 +1,218 @@
-# Getting Started with Create React App
+# VIPshop E-commerce Transaction Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+VIPshop E-commerce Transaction Platform is a production-oriented MERN application focused on the core transaction flow of an e-commerce system: cart, checkout, payment, order fulfillment, inventory coordination, and refund reversal.
 
-## Available Scripts
+This system is intentionally scoped to the business-critical path rather than the full storefront experience. The goal is to present a platform that looks and behaves like a real production transaction service, with clear workflow boundaries, auditable state transitions, and operational visibility.
 
-In the project directory, you can run:
+## Project overview
 
-### `npm start`
+Most e-commerce demos overemphasize product browsing and underemphasize the parts that matter in production:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Payment verification
+- Order state consistency
+- Inventory reservation and deduction
+- Refund rollback
+- Workflow traceability
+- Role-based operational actions
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+VIPshop E-commerce Transaction Platform is designed to showcase those transaction concerns directly.
 
-### `npm test`
+## Core capabilities
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Frontend workflow
+- Cart management
+- Shipping address collection
+- Payment method selection
+- Order placement and confirmation
+- Order detail tracking
+- Transaction state timeline
 
-### `npm run build`
+### Backend workflow
+- Order creation and validation
+- PayPal payment verification
+- Inventory reservation, deduction, and restoration
+- Fulfillment state transitions
+- Refund flow orchestration
+- Status history auditing
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Technology stack
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Frontend
+- React
+- Redux Toolkit
+- RTK Query
+- React Router
+- React Bootstrap
+- PayPal React SDK
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Backend
+- Node.js
+- Express
+- MongoDB
+- Mongoose
+- JWT authentication
+- PayPal REST API
 
-### `npm run eject`
+## System architecture
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Frontend structure
+- `CartScreen`
+- `ShippingScreen`
+- `PaymentScreen`
+- `PlaceOrderScreen`
+- `OrderScreen`
+- `LoginScreen`
+- `RegisterScreen`
+- `ProfileScreen`
+- Shared UI components such as `Header`, `Footer`, `Loader`, `Message`, and `CheckoutSteps`
+- Redux slices for cart, auth, users, and orders
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Backend structure
+- `orderController.js` for transaction orchestration
+- `userController.js` for authentication and profile management
+- `orderModel.js` for order state and history
+- Service layer for pricing, payment verification, inventory, refund handling, and workflow coordination
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Transaction model
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+The order model includes explicit state fields to support a production-style workflow:
 
-## Learn More
+- `fulfillmentStatus`
+- `inventoryStatus`
+- `refundStatus`
+- `statusHistory`
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+These states make the order lifecycle traceable from creation through payment, fulfillment, and refund.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Service layer responsibilities
 
-### Code Splitting
+### `orderPricingService.js`
+Builds order items from the inventory snapshot so pricing is derived from trusted data rather than client-provided values.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### `orderFactoryService.js`
+Creates order drafts and keeps order construction logic out of the controller.
 
-### Analyzing the Bundle Size
+### `paymentService.js`
+Verifies PayPal payments, checks transaction uniqueness, and prepares payment payloads.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### `inventoryService.js`
+Handles inventory snapshot creation, reservation, deduction, and restoration.
 
-### Making a Progressive Web App
+### `refundService.js`
+Coordinates refund initiation, approval, processing, and rejection.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### `orderStatusService.js`
+Writes fulfillment, inventory, refund, and status history records.
 
-### Advanced Configuration
+### `orderWorkflowService.js`
+Orchestrates the end-to-end order lifecycle across creation, payment confirmation, delivery, and refund.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Business flow
 
-### Deployment
+### Order creation
+1. User submits cart and shipping information.
+2. Server rebuilds order items from inventory snapshot data.
+3. Server recalculates all prices.
+4. A draft order is created.
+5. Initial workflow state is recorded.
+6. Inventory is reserved.
+7. The order is saved.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Payment confirmation
+1. User completes payment.
+2. Server verifies the PayPal transaction.
+3. The transaction is checked for idempotency.
+4. Payment amount is validated.
+5. The order is marked as paid.
+6. Inventory is deducted.
+7. Fulfillment state advances.
+8. Status history is recorded.
 
-### `npm run build` fails to minify
+### Delivery handling
+1. An operator marks the order as delivered.
+2. Fulfillment state is updated.
+3. Delivery time is stored.
+4. Status history is updated.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Refund reversal
+1. An operator initiates a refund.
+2. Refund status moves into processing.
+3. Inventory is restored.
+4. Refund is completed.
+5. Fulfillment is cancelled.
+6. Payment metadata is cleared.
+7. Status history is updated.
+
+## What makes this project production-oriented
+
+- Focused on the transaction core instead of storefront noise
+- Clear separation of controller, service, and model responsibilities
+- Payment verification and idempotency checks
+- Inventory and refund flows modeled as workflow steps
+- Status timeline surfaced in the UI for operational visibility
+- Auditable state transitions throughout the order lifecycle
+
+## UI highlights
+
+The order detail page is designed to communicate transaction status clearly and professionally.
+
+It shows:
+
+- Shipping information
+- Payment method and payment state
+- Order items
+- Fulfillment status
+- Inventory status
+- Refund status
+- A transaction status timeline
+- Order totals
+- Payment, delivery, and refund actions when appropriate
+
+## Getting started
+
+### Install dependencies
+
+Install the root dependencies first, then install the frontend dependencies:
+
+```bash
+npm install
+npm install --prefix frontend
+```
+
+### Run locally
+
+Start both the backend and frontend together:
+
+```bash
+npm run dev
+```
+
+### Test
+
+Run the full test suite with Vitest:
+
+```bash
+npm test
+```
+
+Run tests in watch mode during development:
+
+```bash
+npm run test:watch
+```
+
+Open the Vitest UI for interactive test debugging:
+
+```bash
+npm run test:ui
+```
+
+### Build frontend
+
+```bash
+npm run build
+```
+
+## Interview-friendly summary
+
+VIPshop E-commerce Transaction Platform demonstrates how to design and implement a business-critical transaction workflow for an e-commerce platform, with emphasis on order state management, inventory coordination, payment verification, refund reversal, and traceable workflow transitions.

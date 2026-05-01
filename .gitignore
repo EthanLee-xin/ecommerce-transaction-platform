@@ -1,31 +1,49 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
-node_modules
-/node_modules
-/.pnp
-.pnp.js
+node_modules/
+frontend/node_modules/
+backend/node_modules/
 
-# testing
-/coverage
+# build output
+build/
+frontend/build/
+backend/build/
+dist/
+frontend/dist/
+backend/dist/
+coverage/
 
-# production
-/build
-
-# misc
-.DS_Store
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
+# logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-frontend/build
-uploads/*png
-uploads/*jpg
+pnpm-debug.log*
 
-# API tests
+# environment files
+.env
+.env.*
+!.env.example
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# caches and temp files
+.cache/
+.tmp/
+tmp/
+*.tsbuildinfo
+
+# runtime artifacts
+uploads/
 http
+
+# Docker / compose overrides
+.docker/
+*.pid
+
+# test artifacts
+playwright-report/
+vitest-coverage/
