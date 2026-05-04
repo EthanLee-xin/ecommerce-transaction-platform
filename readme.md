@@ -1,4 +1,4 @@
-# Ecommerce Transaction Platform
+# E-commerce Transaction Platform
 
 Production-style e-commerce transaction platform covering orders, payments, refunds, webhook idempotency, observability, testing, and Docker.
 
@@ -17,9 +17,19 @@ The result is a system that looks and behaves more like a real production servic
 
 ---
 
+## What this project demonstrates
+
+- End-to-end e-commerce transaction workflows
+- Stripe and PayPal payment integration
+- Webhook idempotency and payment reconciliation
+- Refund handling and auditable order state transitions
+- Structured logging, request tracing, health checks, and metrics
+- Frontend-to-backend integration with React, TypeScript, and RTK Query
+- Automated tests for payment and order workflows
+
 ## Why this project exists
 
-Most e-commerce demos spend their time on product browsing and visual catalog features. E-commerce transaction platform focuses instead on the transactional core:
+Most e-commerce demos spend their time on product browsing and visual catalog features. This e-commerce transaction platform focuses instead on the transactional core:
 
 - Can an order be created safely?
 - Can payment be verified reliably?
@@ -124,6 +134,22 @@ graph TD
 ---
 
 ## Frontend structure
+
+The frontend is intentionally thin and transaction-focused. It collects user intent, manages checkout state, renders payment and order status, and delegates trusted business logic to backend services.
+
+### Key frontend responsibilities include:
+
+- Authentication and protected routes
+- Cart and checkout state management
+- Stripe and PayPal payment UI integration
+- Order status rendering
+- Loading, error, and empty states
+- API communication through RTK Query
+- Shared TypeScript types for frontend-backend contracts
+
+This design keeps the frontend focused on user interaction and transaction visibility, while backend services handle trusted business rules such as payment verification, refund handling, inventory coordination, and order state transitions.
+
+Frontend technologies used in this project include React, TypeScript, Redux Toolkit, RTK Query, React Router, React Bootstrap, Stripe React SDK, and PayPal React SDK.
 
 ### Screens
 - `LoginScreen`
@@ -383,4 +409,4 @@ npm run typecheck
 
 ## Summary
 
-Ecommerce Transaction Platform is built as a transaction platform rather than a simple storefront. Its architecture is designed to keep order logic trustworthy, payment handling auditable, inventory updates consistent, and operational state easy to inspect.
+The Ecommerce Transaction Platform is built as a transaction-focused system rather than a simple storefront.
