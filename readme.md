@@ -45,6 +45,7 @@ That is the part employers care about when they ask about system design, backend
 ## Core capabilities
 
 ### Customer-facing workflow
+
 - Registration and login
 - Cart management
 - Shipping address collection
@@ -56,6 +57,7 @@ That is the part employers care about when they ask about system design, backend
 - Transaction status timeline
 
 ### Operational workflow
+
 - Order delivery confirmation
 - Refund handling
 - Payment verification
@@ -71,6 +73,7 @@ That is the part employers care about when they ask about system design, backend
 ## Technology stack
 
 ### Frontend
+
 - React
 - TypeScript
 - Redux Toolkit
@@ -81,6 +84,7 @@ That is the part employers care about when they ask about system design, backend
 - PayPal React SDK
 
 ### Backend
+
 - Node.js
 - Express
 - MongoDB
@@ -91,6 +95,7 @@ That is the part employers care about when they ask about system design, backend
 - Redis for idempotency and runtime coordination
 
 ### Testing and quality
+
 - Vitest
 - React Testing Library
 - Node-based API tests
@@ -99,6 +104,7 @@ That is the part employers care about when they ask about system design, backend
 - TypeScript type checking
 
 ### Observability
+
 - Request logging
 - Structured event logs
 - Payment failure logs
@@ -133,7 +139,7 @@ graph TD
 
 ---
 
-## Frontend structure
+## Frontend Architecture & Structure
 
 The frontend is intentionally thin and transaction-focused. It collects user intent, manages checkout state, renders payment and order status, and delegates trusted business logic to backend services.
 
@@ -152,6 +158,7 @@ This design keeps the frontend focused on user interaction and transaction visib
 Frontend technologies used in this project include React, TypeScript, Redux Toolkit, RTK Query, React Router, React Bootstrap, Stripe React SDK, and PayPal React SDK.
 
 ### Screens
+
 - `LoginScreen`
 - `RegisterScreen`
 - `CartScreen`
@@ -162,6 +169,7 @@ Frontend technologies used in this project include React, TypeScript, Redux Tool
 - `ProfileScreen`
 
 ### Shared components
+
 - `Header`
 - `Footer`
 - `Loader`
@@ -172,6 +180,7 @@ Frontend technologies used in this project include React, TypeScript, Redux Tool
 - `PrivateRoute`
 
 ### State and API layer
+
 - `authSlice`
 - `cartSlice`
 - `apiSlice`
@@ -179,7 +188,9 @@ Frontend technologies used in this project include React, TypeScript, Redux Tool
 - `ordersApiSlice`
 
 ### Shared type structure
+
 Frontend types are organized by domain:
+
 - `frontend/src/types/order/`
 - `frontend/src/types/payment/`
 - `frontend/src/types/user/`
@@ -193,11 +204,13 @@ The frontend is deliberately thin: it collects intent, renders transaction state
 ## Backend structure
 
 ### Controllers
+
 - `userController.ts`
 - `orderController.ts`
 - `stripeController.ts`
 
 ### Services
+
 - `orderFactoryService.ts`
 - `orderPricingService.ts`
 - `orderWorkflowService.ts`
@@ -209,6 +222,7 @@ The frontend is deliberately thin: it collects intent, renders transaction state
 - `stripeService.ts`
 
 ### Middleware
+
 - `authMiddleware.ts`
 - `roleMiddleware.ts`
 - `idempotencyMiddleware.ts`
@@ -218,6 +232,7 @@ The frontend is deliberately thin: it collects intent, renders transaction state
 - `errorMiddleware.ts`
 
 ### Utilities
+
 - `logger.ts`
 - `metrics.ts`
 - `idempotencyStore.ts`
@@ -226,7 +241,9 @@ The frontend is deliberately thin: it collects intent, renders transaction state
 - `requestContext.ts`
 
 ### Backend DTO / type structure
+
 Backend types are organized by domain:
+
 - `backend/types/order/`
 - `backend/types/payment/`
 - `backend/types/user/`
@@ -240,6 +257,7 @@ Backend types are organized by domain:
 Stripe is implemented as a first-class payment provider rather than a quick demo callback.
 
 ### Flow overview
+
 1. The user selects Stripe as the payment method.
 2. The frontend creates the order.
 3. The backend creates a Stripe payment intent for that order.
@@ -250,6 +268,7 @@ Stripe is implemented as a first-class payment provider rather than a quick demo
 8. Stripe webhooks reconcile the final payment state.
 
 ### Why this design is production-friendly
+
 - card data stays inside Stripe-managed UI
 - the backend stores `paymentIntentId` and payment metadata on the order
 - webhook events are idempotent
@@ -265,14 +284,18 @@ See `docs/stripe.md` for the full design write-up.
 The project now includes a small but realistic observability layer.
 
 ### Request tracing
+
 Each request can carry:
+
 - `x-request-id`
 - `x-correlation-id`
 
 These values are propagated into structured logs so a single business transaction can be followed across the stack.
 
 ### Structured logs
+
 Logs are emitted as JSON entries with fields such as:
+
 - timestamp
 - level
 - event
@@ -284,6 +307,7 @@ Logs are emitted as JSON entries with fields such as:
 - durationMs
 
 ### Health and metrics
+
 - `GET /api/health`
 - `GET /api/metrics`
 - `POST /api/metrics/reset`
@@ -299,6 +323,7 @@ See `docs/observability.md` for more detail.
 The test strategy is centered on transactional correctness.
 
 ### Current coverage themes
+
 - Stripe webhook success handling
 - Stripe webhook duplicate-event handling
 - Stripe webhook error handling
@@ -308,7 +333,9 @@ The test strategy is centered on transactional correctness.
 - localStorage-backed checkout state
 
 ### Why this matters
+
 These are the paths most likely to cause production incidents if they regress:
+
 - duplicate payment updates
 - invalid order state transitions
 - payment provider flow breakage
@@ -323,18 +350,22 @@ See `docs/tests.md` for the full testing strategy.
 The project can be started with Docker for a more production-like local environment.
 
 ### Services included
+
 - `backend` on port `5000`
 - `frontend` on port `3000`
 - `mongo` on port `27017`
 - `redis` on port `6379`
 
 ### Container communication
+
 - The frontend is served by Nginx and talks to the backend through the API base URL configured in the app.
 - The backend connects to MongoDB and Redis using the service names defined in `docker-compose.yml`.
 - Inside Docker Compose, the backend should use the service hostnames `mongo` and `redis`, not `localhost`.
 
 ### Required environment variables
+
 At minimum, the backend container needs the same values you would use locally, such as:
+
 - `MONGO_URI`
 - `JWT_SECRET`
 - `PAYPAL_CLIENT_ID`
@@ -346,6 +377,7 @@ At minimum, the backend container needs the same values you would use locally, s
 - `VITE_STRIPE_PUBLISHABLE_KEY`
 
 ### Docker Compose startup
+
 From the repository root:
 
 ```bash
@@ -353,19 +385,23 @@ docker compose up --build
 ```
 
 This will:
+
 - build the backend image
 - build the frontend image
 - start MongoDB and Redis
 - expose the app locally
 
 ### Access after startup
+
 - Frontend: `http://localhost:3000`
 - Backend API: `http://localhost:5000`
 - MongoDB: `mongodb://localhost:27017`
 - Redis: `redis://localhost:6379`
 
 ### Notes for local development
+
 If you are not using Docker:
+
 - start the backend and frontend separately with the package scripts
 - use your local MongoDB and Redis instances
 - keep the frontend proxy / API base URL aligned with your dev setup
@@ -375,22 +411,26 @@ If you are not using Docker:
 ## Getting started
 
 ### Install dependencies
+
 ```bash
 npm install
 npm install --prefix frontend
 ```
 
 ### Run locally
+
 ```bash
 npm run dev
 ```
 
 ### Run tests
+
 ```bash
 npm test
 ```
 
 ### Type check
+
 ```bash
 npm run typecheck
 ```
@@ -409,4 +449,4 @@ npm run typecheck
 
 ## Summary
 
-The Ecommerce Transaction Platform is built as a transaction-focused system rather than a simple storefront.
+The E-commerce Transaction Platform is built as a transaction-focused system rather than a simple storefront.
