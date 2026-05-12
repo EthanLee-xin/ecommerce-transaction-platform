@@ -1,85 +1,120 @@
 # E-commerce Transaction Platform
 
-Production-style e-commerce transaction platform covering orders, payments, refunds, webhook idempotency, observability, testing, and Docker.
+## Overview
 
-This project is intentionally scoped to the parts that matter most in real systems:
+A production full-stack e-commerce transaction platform with a **Next.js + TailwindCSS frontend** and an **Express + MongoDB backend**.
 
-- order consistency
-- payment verification
-- inventory coordination
-- refund rollback
-- webhook idempotency protection
-- auditable status transitions
-- structured logging and health checks
-- testability and type safety
+The project focuses on the business-critical path of online commerce: cart, checkout, order creation, payment processing, refund handling, order status tracking, and transaction visibility.
 
-The result is a system that looks and behaves more like a real production service than a simple storefront demo.
+The frontend was rebuilt from a traditional React application into a modern Next.js App Router architecture, with transaction-focused pages for checkout, payment, order status, refund workflows, route protection, and a redesigned TailwindCSS UI.
 
----
+The backend remains an Express API service responsible for trusted transaction logic, including order creation, Stripe and PayPal integration, refund handling, JWT authentication, payment status updates, and order lifecycle management.
 
 ## What this project demonstrates
 
-- End-to-end e-commerce transaction workflows
-- Stripe and PayPal payment integration
-- Webhook idempotency and payment reconciliation
-- Refund handling and auditable order state transitions
-- Structured logging, request tracing, health checks, and metrics
-- Frontend-to-backend integration with React, TypeScript, and RTK Query
-- Automated tests for payment and order workflows
+- Full-stack transaction workflow across Next.js frontend and Express backend
+- Checkout, payment, order status, and refund user flows
+- Stripe Payment Element and PayPal payment integration
+- Order lifecycle management with explicit status transitions
+- Payment status and refund status tracking
+- Frontend-to-backend API integration through RTK Query
+- Protected routes and user order center
+- Admin workflows for product, user, order, shipment, and refund management
+- TailwindCSS-based UI redesign for transaction-focused pages
+- Separation of frontend interaction logic from backend trusted transaction logic
 
-## Why this project exists
+## Architecture
 
-Most e-commerce demos spend their time on product browsing and visual catalog features. This e-commerce transaction platform focuses instead on the transactional core:
+```text
+User / Admin
+    |
+    v
+Next.js Frontend
+- App Router
+- TailwindCSS UI
+- RTK Query API layer
+- Protected routes
+- Checkout / payment / order status pages
+    |
+    v
+Express Backend API
+- JWT authentication
+- Order services
+- Payment services
+- Refund services
+- Admin APIs
+- Stripe / PayPal integration
+    |
+    v
+MongoDB
+- Users
+- Products
+- Orders
+- Payment state
+- Refund state
 
-- Can an order be created safely?
-- Can payment be verified reliably?
-- Can duplicate payment callbacks be ignored?
-- Can inventory be reserved and restored correctly?
-- Can operators see what happened to an order at each stage?
-- Can the system be monitored and debugged like a real service?
+Redis
+- Idempotency protection
+- Runtime coordination
+```
 
-That is the part employers care about when they ask about system design, backend reliability, and production readiness.
+## Frontend / Backend Boundary
 
----
+The frontend is implemented with **Next.js**, **React**, **TypeScript**, and **TailwindCSS**. It handles user interaction, checkout state, payment UI rendering, order status visibility, refund request UI, and admin-facing transaction screens.
 
-## Core capabilities
+The backend remains an **Express API service**. It owns trusted business logic such as order creation, payment intent creation, Stripe / PayPal integration, refund processing, JWT authentication, payment status updates, and order lifecycle state transitions.
 
-### Customer-facing workflow
+The frontend communicates with the backend through REST APIs and RTK Query. Payment verification, refund handling, and order state changes are handled by the backend rather than directly inside the Next.js frontend.
 
-- Registration and login
-- Cart management
-- Shipping address collection
-- Payment method selection
-- Stripe card payment through `Elements` / `PaymentElement`
-- PayPal checkout support
-- Order placement
-- Order detail tracking
-- Transaction status timeline
+## Core Transaction Workflows
 
-### Operational workflow
+### Checkout Flow
 
-- Order delivery confirmation
-- Refund handling
-- Payment verification
-- Inventory deduction and restoration
-- Status history auditing
-- Metrics and request observability
-- Structured logs with request / correlation ids
-- Health checks
-- Redis-backed idempotency protection for critical endpoints
+The checkout flow allows users to move from cart state into a draft order. Users can review cart items, complete shipping information, select a payment method, and proceed to payment.
 
----
+### Payment Flow
 
-## Technology stack
+The payment flow supports Stripe card payment through Stripe Payment Element and PayPal checkout. Payment method and payment status are stored on the order and displayed in the order detail page.
+
+### Order Status Flow
+
+The order system uses an explicit lifecycle:
+
+```text
+PENDING_INFO
+READY_FOR_PAYMENT
+PAYMENT_PENDING
+PAID
+PAYMENT_FAILED
+CANCELLED
+SHIPPED
+DELIVERED
+```
+
+### Refund Flow
+
+This allows the platform to represent cases such as delivered orders that later become refunded, or paid orders with pending refund requests.
+
+```text
+NONE
+REFUND_REQUESTED
+REFUND_PENDING
+REFUNDED
+REFUND_FAILED
+```
+
+## Technology Stack
 
 ### Frontend
 
+- Next.js App Router
 - React
-- TypeScript
+- TypeScript / JavaScript
 - Redux Toolkit
 - RTK Query
-- React Router
-- React Bootstrap
+- TailwindCSS
+- React Icons
+- React Toastify
 - Stripe React SDK
 - PayPal React SDK
 
@@ -91,362 +126,199 @@ That is the part employers care about when they ask about system design, backend
 - Mongoose
 - JWT authentication
 - Stripe API
-- PayPal REST API
-- Redis for idempotency and runtime coordination
+- PayPal API
 
-### Testing and quality
+### Transaction & Payment
 
-- Vitest
-- React Testing Library
-- Node-based API tests
-- Stripe webhook tests
-- Order state machine tests
-- TypeScript type checking
+- Stripe Payment Element
+- PayPal Checkout
+- Order lifecycle state machine
+- Refund status tracking
+- Admin refund workflow
 
-### Observability
+### Dev / Deployment
 
-- Request logging
-- Structured event logs
-- Payment failure logs
-- Stripe webhook failure logs
-- Metrics endpoint
-- Health endpoint
+- Docker / Docker Compose, if currently supported
+- Vercel for frontend deployment
+- Render / Railway / Fly.io / VPS for backend deployment
+- MongoDB Atlas for database
 
----
 
-## System architecture
+### Storefront
 
-```mermaid
-graph TD
-  U[Customer / Operator] --> FE[React + TS Frontend]
-  FE --> API[Express API]
-  API --> REQ[Request ID / Correlation ID Middleware]
-  API --> AUTH[Auth Middleware]
-  API --> IDP[Idempotency Middleware]
-  API --> ORD[Order Workflow Services]
-  API --> USR[User Controller / Services]
-  ORD --> STRIPE[Stripe Verification / Webhooks]
-  ORD --> PAY[PayPal Verification]
-  ORD --> INV[Inventory Service]
-  ORD --> REF[Refund Service]
-  ORD --> STS[Order Status Service]
-  ORD --> DB[(MongoDB)]
-  IDP --> REDIS[(Redis)]
-  API --> OBS[Metrics / Health / Structured Logs]
-  OBS --> LOGS[JSON Logs]
-  USR --> DB
+- Product listing page
+- Product detail page
+- Product carousel
+- Product search
+- Pagination
+- Product rating display
+- Optimized product images with `next/image`
+
+### User
+
+- User registration
+- User login/logout
+- Protected routes
+- User profile update
+- Separate user order center
+- Continue unfinished orders
+
+### Cart & Checkout
+
+- Add to cart
+- Update quantity
+- Remove item
+- Create draft order directly from cart
+- Complete shipping information inside order details
+- Pay after shipping information is completed
+
+### Order Lifecycle
+
+The order system uses a custom state machine:
+
+```txt
+PENDING_INFO
+READY_FOR_PAYMENT
+PAYMENT_PENDING
+PAID
+PAYMENT_FAILED
+CANCELLED
+SHIPPED
+DELIVERED
 ```
 
----
+Order flow:
 
-## Frontend Architecture & Structure
+```txt
+Cart checkout
+-> PENDING_INFO
 
-The frontend is intentionally thin and transaction-focused. It collects user intent, manages checkout state, renders payment and order status, and delegates trusted business logic to backend services.
+Save shipping address
+-> READY_FOR_PAYMENT
 
-### Key frontend responsibilities include:
+Start payment
+-> PAYMENT_PENDING
 
-- Authentication and protected routes
-- Cart and checkout state management
-- Stripe and PayPal payment UI integration
-- Order status rendering
-- Loading, error, and empty states
-- API communication through RTK Query
-- Shared TypeScript types for frontend-backend contracts
+Payment success
+-> PAID
 
-This design keeps the frontend focused on user interaction and transaction visibility, while backend services handle trusted business rules such as payment verification, refund handling, inventory coordination, and order state transitions.
+Admin marks as shipped
+-> SHIPPED
 
-Frontend technologies used in this project include React, TypeScript, Redux Toolkit, RTK Query, React Router, React Bootstrap, Stripe React SDK, and PayPal React SDK.
-
-### Screens
-
-- `LoginScreen`
-- `RegisterScreen`
-- `CartScreen`
-- `ShippingScreen`
-- `PaymentScreen`
-- `PlaceOrderScreen`
-- `OrderScreen`
-- `ProfileScreen`
-
-### Shared components
-
-- `Header`
-- `Footer`
-- `Loader`
-- `Message`
-- `FormContainer`
-- `CheckoutSteps`
-- `Meta`
-- `PrivateRoute`
-
-### State and API layer
-
-- `authSlice`
-- `cartSlice`
-- `apiSlice`
-- `usersApiSlice`
-- `ordersApiSlice`
-
-### Shared type structure
-
-Frontend types are organized by domain:
-
-- `frontend/src/types/order/`
-- `frontend/src/types/payment/`
-- `frontend/src/types/user/`
-- `frontend/src/types/shared/`
-- `frontend/src/types/index.ts`
-
-The frontend is deliberately thin: it collects intent, renders transaction state, and delegates all trusted business logic to the backend.
-
----
-
-## Backend structure
-
-### Controllers
-
-- `userController.ts`
-- `orderController.ts`
-- `stripeController.ts`
-
-### Services
-
-- `orderFactoryService.ts`
-- `orderPricingService.ts`
-- `orderWorkflowService.ts`
-- `orderStatusService.ts`
-- `orderStateGuardService.ts`
-- `paymentService.ts`
-- `inventoryService.ts`
-- `refundService.ts`
-- `stripeService.ts`
-
-### Middleware
-
-- `authMiddleware.ts`
-- `roleMiddleware.ts`
-- `idempotencyMiddleware.ts`
-- `metricsMiddleware.ts`
-- `requestLogger.ts`
-- `healthMiddleware.ts`
-- `errorMiddleware.ts`
-
-### Utilities
-
-- `logger.ts`
-- `metrics.ts`
-- `idempotencyStore.ts`
-- `errorCodes.ts`
-- `appError.ts`
-- `requestContext.ts`
-
-### Backend DTO / type structure
-
-Backend types are organized by domain:
-
-- `backend/types/order/`
-- `backend/types/payment/`
-- `backend/types/user/`
-- `backend/types/shared/`
-- `backend/types/index.ts`
-
----
-
-## Stripe integration
-
-Stripe is implemented as a first-class payment provider rather than a quick demo callback.
-
-### Flow overview
-
-1. The user selects Stripe as the payment method.
-2. The frontend creates the order.
-3. The backend creates a Stripe payment intent for that order.
-4. The frontend mounts Stripe `Elements` with the returned `clientSecret`.
-5. The user enters card details in `PaymentElement`.
-6. Stripe confirms payment.
-7. The frontend posts the payment result back to the backend.
-8. Stripe webhooks reconcile the final payment state.
-
-### Why this design is production-friendly
-
-- card data stays inside Stripe-managed UI
-- the backend stores `paymentIntentId` and payment metadata on the order
-- webhook events are idempotent
-- duplicate delivery of webhook events does not double-process payment
-- failures are logged with structured context
-
-See `docs/stripe.md` for the full design write-up.
-
----
-
-## Observability
-
-The project now includes a small but realistic observability layer.
-
-### Request tracing
-
-Each request can carry:
-
-- `x-request-id`
-- `x-correlation-id`
-
-These values are propagated into structured logs so a single business transaction can be followed across the stack.
-
-### Structured logs
-
-Logs are emitted as JSON entries with fields such as:
-
-- timestamp
-- level
-- event
-- requestId
-- correlationId
-- orderId
-- paymentIntentId
-- statusCode
-- durationMs
-
-### Health and metrics
-
-- `GET /api/health`
-- `GET /api/metrics`
-- `POST /api/metrics/reset`
-
-This gives the project a more production-like operations surface.
-
-See `docs/observability.md` for more detail.
-
----
-
-## Testing
-
-The test strategy is centered on transactional correctness.
-
-### Current coverage themes
-
-- Stripe webhook success handling
-- Stripe webhook duplicate-event handling
-- Stripe webhook error handling
-- order state machine guard rules
-- payment method selection UI
-- Stripe checkout form behavior
-- localStorage-backed checkout state
-
-### Why this matters
-
-These are the paths most likely to cause production incidents if they regress:
-
-- duplicate payment updates
-- invalid order state transitions
-- payment provider flow breakage
-- checkout UI regressions
-
-See `docs/tests.md` for the full testing strategy.
-
----
-
-## Docker setup
-
-The project can be started with Docker for a more production-like local environment.
-
-### Services included
-
-- `backend` on port `5000`
-- `frontend` on port `3000`
-- `mongo` on port `27017`
-- `redis` on port `6379`
-
-### Container communication
-
-- The frontend is served by Nginx and talks to the backend through the API base URL configured in the app.
-- The backend connects to MongoDB and Redis using the service names defined in `docker-compose.yml`.
-- Inside Docker Compose, the backend should use the service hostnames `mongo` and `redis`, not `localhost`.
-
-### Required environment variables
-
-At minimum, the backend container needs the same values you would use locally, such as:
-
-- `MONGO_URI`
-- `JWT_SECRET`
-- `PAYPAL_CLIENT_ID`
-- `PAYPAL_APP_SECRET`
-- `PAYPAL_API_URL`
-- `REDIS_URL`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `VITE_STRIPE_PUBLISHABLE_KEY`
-
-### Docker Compose startup
-
-From the repository root:
-
-```bash
-docker compose up --build
+Admin marks as delivered
+-> DELIVERED
 ```
 
-This will:
+### Payment
 
-- build the backend image
-- build the frontend image
-- start MongoDB and Redis
-- expose the app locally
+- PayPal payment
+- Stripe card payment
+- Embedded Stripe Payment Element
+- Payment method stored on order
+- Payment status displayed in order details
 
-### Access after startup
+### Refund
 
-- Frontend: `http://localhost:3000`
-- Backend API: `http://localhost:5000`
-- MongoDB: `mongodb://localhost:27017`
-- Redis: `redis://localhost:6379`
+- Stripe refund support
+- Refund status tracking
 
-### Notes for local development
-
-If you are not using Docker:
-
-- start the backend and frontend separately with the package scripts
-- use your local MongoDB and Redis instances
-- keep the frontend proxy / API base URL aligned with your dev setup
-
----
-
-## Getting started
-
-### Install dependencies
-
-```bash
-npm install
-npm install --prefix frontend
+```txt
+NONE
+REFUND_REQUESTED
+REFUND_PENDING
+REFUNDED
+REFUND_FAILED
 ```
 
-### Run locally
+- Refund status shown in order summary and order timeline
+
+## Project Structure
+
+```txt
+frontend
+├── src
+│   ├── app
+│   │   ├── page.js
+│   │   ├── product/[id]/page.js
+│   │   ├── cart/page.js
+│   │   ├── order/[id]/page.js
+│   │   ├── profile/page.js
+│   │   ├── profile/orders/page.js
+│   │   └── admin
+│   ├── components
+│   ├── screens
+│   ├── slices
+│   ├── utils
+│   ├── lib
+│   └── assets/styles
+```
+
+```txt
+backend
+├── controllers
+├── models
+├── routes
+├── middleware
+├── utils
+└── server.js
+```
+
+## Running Locally
+
+### Start backend
 
 ```bash
+cd backend
 npm run dev
 ```
 
-### Run tests
+Backend runs on:
 
-```bash
-npm test
+```txt
+http://localhost:5000
 ```
 
-### Type check
+### Start frontend
 
 ```bash
-npm run typecheck
+cd frontend
+npm run dev
 ```
 
----
+Frontend runs on:
 
-## Documentation map
+```txt
+http://localhost:3000
+```
 
-- `docs/architecture.md` — system architecture and component boundaries
-- `docs/workflow.md` — business workflow and state transitions
-- `docs/stripe.md` — Stripe payment and webhook design
-- `docs/tests.md` — test strategy and coverage philosophy
-- `docs/observability.md` — logs, metrics, and runtime visibility
+## Payment Testing
 
----
+### Stripe Test Card
 
-## Summary
+```txt
+Card number: 4242 4242 4242 4242
+Expiry: Any future date
+CVC: Any 3 digits
+ZIP: Any value
+```
 
-The E-commerce Transaction Platform is built as a transaction-focused system rather than a simple storefront.
+### PayPal
+
+Use PayPal sandbox buyer and merchant accounts.
+
+## Deployment Notes
+
+Recommended deployment model:
+
+- Frontend: Vercel
+- Backend: Render, Railway, Fly.io, or VPS
+- Database: MongoDB Atlas
+- Image storage: Cloudinary, S3, or persistent backend storage
+
+For production deployment, the following should be configured:
+
+- HTTPS
+- Production Stripe and PayPal credentials
+- CORS configuration
+- Secure cookie / token handling
+- Persistent image storage
