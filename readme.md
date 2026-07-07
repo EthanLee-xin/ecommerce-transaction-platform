@@ -1,4 +1,4 @@
-# E-commerce Transaction Platform
+# Full-Stack E-commerce Architecture
 
 ## Overview
 
